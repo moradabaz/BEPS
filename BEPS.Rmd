@@ -1,0 +1,69 @@
+---
+title: "British vote prediction 2002"
+author: 
+  - Mourad Abbou Aazaz
+output:
+  pdf_document: default
+  html_document: default
+---
+\clearpage
+\tableofcontents
+\clearpage
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(1234)
+```
+
+# Introduction
+
+In 2002 there was a survey which collected some information from people in the UK for the british elections in 2002. The information collected was stored in a data set called *BEPS* and registered data related to people's ideology, euroscepticism, opinion about certain candidates, etc. Having this information, our main target was to predict the candidate a person would vote if they gathered some of the opinions and ideology patterns. Thus, we made a statistical supervised learning analysis based on the data set we have in hand to study the influence and utility of each variable composing the dataset to predict the political party a person would vote.
+
+# Data Set and Subsets
+
+## Variables of the data set
+
+The data set can be found using the `carData` library. 
+
+```{r}
+library(carData)
+str(BEPS)
+```
+
+As we see, we have 10 different variables/predictors:
+
+ * `vote`: This is the *output* we want to draw. It's a Factor variables which represent the three main political parties: Conservative, Liberal Democrat and Labour.
+ * `age`: The age of each person surveyed.
+ * `gender`: Each person's gender (Male or Female). 
+ * `economic.cond.national`: This variable represents each person's knowledge of the national economy.
+ * `economic.cond.household`: This variable represents each person's knowledge of families' household economy.
+ * `Blair`: This variable represents each person's opinion about labourist candidate Blair.
+ * `Hague`: This variable represents each person's opinion about conservative candidate Hague.
+ * `Kennedy`: This variable represents each person's opinion about conservative candidate Kennedy.
+ * `Europe`: This variable represents each person's euroscepticism. If a persons is very eurosceptic, the value will be 11. If is very pro-european, the value will be 0
+ * `political.knowledge`: This variable represents each person's political knowledge.
+ 
+## Data subsets
+
+ The methodology to design a vote prediction model, following learning techniques, will be based on dividing the data set into two data subsets for training and testing, predictors analysis and several learning training algorithms trying to create the most reliable and accurate model. Our main target is to predict the **vote**, which is a factor variable and therefore our model must be a classification model.
+ 
+Before starting to analyze the variables, we loaded the necessary libraries and create the subset partitions. 
+
+```{r} 
+library (reshape2)
+library(lattice)
+library(ggplot2)
+library(caret)
+library(mlbench)
+library(e1071)
+data(BEPS)      
+BEPS.all.data <- BEPS
+output.var.used <- c("vote")
+BEPS.var.inputs <- setdiff(names(BEPS.all.data), output.var.used)
+str(BEPS.var.inputs)
+```
+
+ * Hello world
+
+
