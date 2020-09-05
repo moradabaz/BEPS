@@ -58,12 +58,48 @@ library(caret)
 library(mlbench)
 library(e1071)
 data(BEPS)      
-BEPS.all.data <- BEPS
-output.var.used <- c("vote")
-BEPS.var.inputs <- setdiff(names(BEPS.all.data), output.var.used)
-str(BEPS.var.inputs)
+BEPS.data.all <- BEPS
+BEPS.data.outputs <- c("vote")
+BEPS.data.inputs <- setdiff(names(BEPS.data.all), BEPS.data.outputs)
+str(BEPS.data.inputs)
 ```
 
- * Hello world
+Now we have the following datasets:
 
+* `BEPS.data.all` which represents the whole dataset.
+* `BEPS.data.inputs` which contains all the values except the ones in the **vote** field.
+* `BEPS.data.outputs` which contains the **vote** variable values.
+
+We create a partition in which the 80% of the whole dataset will be used for training and the remaining 20% will be used for testing.
+
+```{r}
+train <-createDataPartition(BEPS.data.all[[BEPS.data.outputs]],p=0.8, list = FALSE, times = 1)
+BEPS.data.all.80 <- BEPS.data.all[train,]
+mask = sapply(BEPS.data.all.80, class) != "factor"
+BEPS.data.all.20 <- BEPS.data.all[-train,]
+BEPS.data.all.Train <- BEPS.data.all.80[,mask]
+BEPS.data.all.Test <- BEPS.data.all[-train,]
+BEPS.data.all.Test <- BEPS.data.all.Test[,mask]
+output.values <- BEPS.data.all.80[[BEPS.data.outputs]]
+```
+
+The new subsets we created above are the following:
+
+* `train` : The created partition. The 'p' value means the proportion and the argument `list = FALSE` se used so that the result can't be a list.
+* `BEPS.data.all.80` : This subset will be used for training and it represents the 80% of the whole dataset.
+* `BEPS.data.all.20` : This subset will be used for testing and it represents the 20% of the whole dataset.
+* `BEPS.data.all.Train` : Training subset.
+* `BEPS.data.all.Test` : Testing subset.
+* `output.values` : Output values subset.
+
+# Variable analysis
+
+
+Varible analysis is an important part of data science because we measure the influence and utilty of each of every variable on prediction result. 
+
+We first take a look at dataset summary>
+
+```{r}
+summary(BEPS)
+```
 
