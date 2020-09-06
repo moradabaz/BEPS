@@ -523,16 +523,132 @@ svm.C <- beps.svm.model$bestTune$C
 beps.svm.model
 ```
 
+As we see, the best hyperparameter values are `sigma=0.015` and `C=3`
+
+\clearpage
+
+## Random Forests Model
+
+```{r}
+modelLookup("rf")
+```
+
+The hyperparameter `mtry` represents the number of random variables marked as candidates for each branch. 
+
+```{r}
+rf.grid <- expand.grid(mtry=c(1,2,3,4))
+beps.rf.model <- train(BEPS.data.all.Train, output.values, method="rf", tuneGrid=rf.grid, trControl=beps.trainCtrl, verbose=F)
+beps.rf.model
+```
+
+If we have a look at the `mtry` influence, we see that the best `mtry` value is 1 
+
+```{r}
+plot(beps.rf.model, col = "blue")
+```
 
 
 
+\clearpage
 
 
+# Comparing models obtained
+
+After training the chosen models, it's necessary to  validate and  make a comparison of each of them. First of all, we will train again the models but using only their best hyperparameters
+
+```{r}
+rf.grid <- expand.grid(mtry=c(1))
+beps.rf.model <- train(BEPS.data.all.Train, output.values, method="rf", 
+                        tuneGrid=rf.grid, trControl=beps.trainCtrl, verbose=F)
+
+svm.grid <- expand.grid(sigma = svm.sigma, C = svm.C)
+beps.svm.model <- train(BEPS.data.all.Train.scale, output.values, method = "svmRadial",
+                         tuneGrid = svm.grid, trControl = beps.trainCtrl)
+
+knn.grid <- expand.grid(k=c(knn.k$k))
+beps.knn.model <- train(BEPS.data.all.Train.scale, output.values, method="knn", 
+                        trControl=beps.trainCtrl, tuneGrid=knn.grid)
+
+```
+
+## Comparing models
+
+After training the chosen models, it's necessary to  validate and  make a comparison of each of them. 
+
+```{r}
+set.seed(1234)
+model.list <- list(
+  SVM.MODEL=beps.svm.model,
+  RF.MODEL=beps.rf.model,
+  KNN.MODEL=beps.knn.model
+)
+beps.resamples <- resamples(model.list)
+```
 
 
+The function `resamples` groups the 30 permutes for each algorithm. The function `summary` helps us make a summary of  `Acuraccy` and  `Kappa` values.
+
+```{r}
+summary(beps.resamples)
+```
+
+\hfill \break
+
+```{r}
+bwplot(beps.resamples)
+```
 
 
+Apparently, we cant draw any conclusion of the optimal model among the three of them for our predictions due to the `Accuracy` and `Kappa` overlapping values and both variables have a similar behaviour. As for the `Kappa` variable, it is said that if its value is between `0.4` and `0.75`, then it's a good value and it can help us if the `Accuracy` variable can have problemas with unbalanced classes. 
 
+\hfill \break
+
+
+# Testing and validation
+
+As we saw the comparison table, we could tell all models have a similar average and median. Now, we are going to execute a prediction using the testing dataset  `BEPS.data.all.20`. 
+
+
+```{r}
+BEPS.data.all.20$vote = as.factor(BEPS.data.all.20$vote)
+BEPS.data.all.test.scale <- predict(center.scale, BEPS.data.all.Test)
+preds.rf <- predict(beps.rf.model, newdata = BEPS.data.all.Test)
+preds.knn <- predict(beps.knn.model, newdata = BEPS.data.all.test.scale)
+preds.svm <- predict(beps.svm.model, newdata = BEPS.data.all.test.scale)
+```
+
+After performing our predictions using the testing dataset, we proceed to observe the results. We use the `postResample()` function, which calculates the `MSE` and the `R-squared` and draws an `Accuracy` and `Kappa` estimate.  
+
+```{r}
+result.svm <- postResample(preds.svm, BEPS.data.all.20$vote)
+result.knn <- postResample(preds.knn, BEPS.data.all.20$vote)
+result.rf <-  postResample(preds.rf, BEPS.data.all.20$vote)
+```
+
+\hfill \break
+
+SVM:
+```{r}
+result.svm
+```
+
+KNN:
+```{r}
+result.knn
+```
+
+RF:
+```{r}
+result.rf
+```
+
+The result of the testing doesn't seem very significant due to it's  mere informative data and it's not a vital value. We should repeat the same experiment several times to have an opinion and a significant response that could show clear differences between different models. Whatsmore, we've seen that in the previous section that comparison results overlap each other. However, **KNN** seems to show a slightly better accuracy result. If we have a look at confussion matrix using this model:
+
+```{r}
+caret::confusionMatrix(preds.svm, BEPS.Datos.Todo.20$vote)
+```
+
+The model has a good predition of the Labour and conservative vote, but a has a bad prediction of the Liberal vote. Our dataset is very small and we may need more tecniques and exemplar to search for a good model. 
 
 
 
