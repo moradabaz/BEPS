@@ -243,5 +243,302 @@ As expected, the better opinion people have on Blair, the more likely they are t
 ## Multivariable Analysis
 
 
+From the  monovariable analysis we would draw some results such as age and euroscepticism may condition the vote. If a person is old and eurosceptic, that person may vote for Conservative. On the other side, if a person is young and aware of the economic situation, they would probably vote for Conservatives.  But we still can't properly know what variables are useless or have any correlation with another variables. It would be great if all variables had no correlation among each other. If so, it would be an obstacle for the training and accuracy error rate would rise. Therefore, it's necessary to calculate all correlation pairs, and if a correlation of *n* pairs of variables is above a certain threshold, then we would have to eliminate the one having the high absolute average value of correlation with the other variables.
+
+If we have a look at the correlation table.
+
+```{r}
+cor(BEPS[,2:9])
+```
+
+When a correlation value between two variables is close to zero o negative, it means those two variable are not correlated, as we can see, for instance ,in the table above with variable `Kennedy` and `political.knowledge`. 
+
+We plot the correlation table:
+
+```{r}
+corrplot::corrplot(cor(BEPS[,2:9]))
+```
+
+If we have a look at the variables `economic.cond.national`. `economic.cond.household` and `Blair` have a certain correlation. If we have a look at the three of them.
+
+
+```{r}
+par(mfrow=c(3,1))
+dens<- density (BEPS$economic.cond.household,na.rm=T)
+hist(BEPS$economic.cond.household, xlab="", main = "Percepción de la economía doméstica",
+     ylim= c (0, max (dens $ y) * 1.2),probability=T)
+lines(dens)
+
+dens<- density (BEPS$economic.cond.national,na.rm=T)
+hist(BEPS$economic.cond.national, xlab="", main = "Percepción de la economía nacional",
+     ylim= c (0, max (dens $ y) * 1.1),probability=T)
+lines(dens)
+
+dens<- density (BEPS$economic.cond.national,na.rm=T)
+hist(BEPS$Blair, xlab="", main = "Blair", ylim= c (0, max (dens$y)*1.1),probability=T)
+lines(dens)
+
+```
+
+The charts show the density and values of the three variables are similar. `Blair` has the least correlation value with the rest of the other two variables, and thus we would remove the `economic.cond.national` and `economic.cond.household` variables.  
+
+\hfill \break
+
+
+# Preprocess and Data Cleansing
+
+
+In this section we clean the usesless data so we can avoid noise that could difficult the training. As we saw, the variables `economic.cond.national` and `economic.cond.household` are considerably correlated, so we will remove them from the dataset. We will also remove non numerical variables, such us gender.
+
+
+```{r}
+BEPS.data.all.Train$gender = NULL
+BEPS.data.all.Train$economic.cond.national = NULL
+BEPS.data.all.Train$economic.cond.household = NULL
+```
+
+We check there are no null values
+
+```{r}
+sum(is.na(BEPS.data.all.Train))
+```
+
+
+## Outliers
+
+There might be extreme values, within the dataset, which coud be greater than 3/2 interquartile distance called outliers. To check if there are outliers, we plot a boxplot of all the variables. 
+
+
+```{r}
+boxplot(BEPS.data.all.Train, col=rainbow(4, s = 0.5))
+```
+
+As we see, there's no evidence of outiliers and then it's not necessary to execute any outlier treatment. 
+
+
+##  Removing unnecessary variables in the testing dataset
+
+```{r}
+BEPS.data.all.Test$economic.cond.national = NULL
+BEPS.data.all.Test$economic.cond.household = NULL
+```
+
+\hfill \break
+
+# Predicting variables influence on vote
+
+After treating our variables and removing the unnecessary ones, we neaded to know what were the ones which could influence on vote. Therefore, we'll execute a logistic regression to what coefficients are favourable to better predict a type of vote or another. 
+
+## Logistic Regression
+
+Our main target in this section is to observe the cofficient variable influence on vote. We will implement a logistic regression model because, unlike linear regression, this tecnique is used to predict binary coefficients. The function `glm()` creates a **generalized linear model**. Using the argument `family=binomial` Rstudio will execute a logistic regression. However, there's a problem. Logistic Regression is used only for binary results. We have three different values or *outputs* and, thus, we must execute three logistic regressions in which we compare each vote value with the rest. 
+
+### Liberal Democrats vs Non-Liberal Democrats
+
+To measure the predictors coefficients we have created a set called `liberals` which contains all the votes values contained in the `BEPS` dataset.
+
+```{r}
+liberals = as.character(BEPS.data.all.80$vote)
+liberals[BEPS.data.all.80$vote != "Liberal Democrat"] = "Non-Liberal"
+liberals <- as.factor(liberals)
+```
+
+We use the `contrasts()` to create a `dummy` version for the `liberals` values.
+
+```{r}
+contrasts(liberals)
+```
+
+Having created dummy variables, if a coefficient was negative, it means that coefficent positively influences the liberal vote. 
+
+\hfill \break
+
+Now we execute the logistic regression. 
+
+```{r}
+reg.log.lib=glm(liberals~., family=binomial(link = "logit"), data=BEPS.data.all.Train)
+summary(reg.log.lib)
+```
+
+
+If we look only at the coefficients:
+
+```{r}
+coef(reg.log.lib)
+```
+
+Observations we can draw here are:
+
+* Except the variable `age`, the rest of `p-values` are too small, which means results are good.
+* The only negative values are the `Kennedy` and `political.knowledge` ones, which means, as opinion about Kennedy improves and political knowledge grow, the probability to vote for democrats rises. * As the rest of coefficients values rise, the probability of voting for democrat decreases. 
+
+### Conservatives vs Non-Conservatives
+
+```{r}
+conservatives = as.character(BEPS.data.all.80$vote)
+conservatives[BEPS.data.all.80$vote != "Conservative"] = "Non-Conservative"
+conservatives <- as.factor(conservatives)
+```
+
+We establish de `dummy` variables.
+
+```{r}
+contrasts(conservatives)
+```
+
+We execute our logistic model.
+
+```{r}
+reg.log.con=glm(conservatives~., family=binomial(link = "logit"), data=BEPS.data.all.Train)
+summary(reg.log.con)
+```
+
+
+```{r}
+coef(reg.log.con)
+```
+
+
+The observations we can draw are:
+
+* The `Blair` and `Kennedy` have a negative impact on Conservative vote.
+* The rest have a good influence on the conservative vote election. 
+* `p-values` are small, which means results quality is good. 
+
+
+### Laborists vs Non-Laborists
+
+
+```{r}
+laborists = as.character(BEPS.data.all.80$vote)
+laborists[BEPS.data.all.80$vote != "Labour"] = "Non-Labour"
+laborists <- as.factor(laborists)
+contrasts(laborists)
+```
+
+We execute our regression model. 
+
+```{r}
+reg.log.lab=glm(laborists~., family=binomial(link = "logit"), data=BEPS.data.all.Train)
+summary(reg.log.lab)
+```
+
+
+```{r}
+coef(reg.log.lab)
+```
+
+
+The only predictor that could positively influence on Labour Vote was `Blair`. The rest, as they increase, they have a negative impact on Labour vote.  
+
+
+### Conclusions 
+
+After executing a logistic regression for each vote value, the general conclusion we can extract are the following:
+
+* **Conservatives**: People who vote for conservatives are people who have a good opinion on `Hague` candidate, they are eurosceptic and have certain political knowledge.
+* **Laborists**: They're more likely to be chosen by people who are young or have a good opinion on `Blair`.
+* **Liberals**: They're more likely to be chosen by people who have a good opinion on `Kennedy`. 
+
+\clearpage
+
+
+
+# Machine Learning training models
+
+Now we are going to use some Machine Learning models offered by `Caret` Library in RStudio. The three tecniques we will use are:
+
+* **K-nearest neighbors**: This simple classification tecnique classifies an element based on the `k` neighbours previously classified. 
+* **Support Vector Machine**: The Support Vector Machine algorithm is an autom'atic learning technique which consists on building a hyperplane in a high dimensionality space which separates the classes we have.
+* **Random Forests**: It's a predictive algorithm which uses a *Bagging* technique that combines different trees, where each tree is created by observations and random variables. 
+
+
+To validate our models, we are going to use a 10-Fold repeated cross-validation using the command `trainControl`.
+
+```{r}
+beps.trainCtrl <- trainControl(
+  method = "repeatedcv",
+  number = 5,
+  repeats = 5,
+  verboseIter = F,
+)
+```
+
+
+## K-Nearest Neighbors (KNN)  Model
+
+To build a propoer `KNN` model, we must apply a normalization and re-scale all the variables so that distances can be comparable. This process is called *Data standarization* and reason is because each variable has a different measure and it would be incorrect to use the same measures for all different type variables and could disturb the prediction results. 
+
+```{r}
+center.scale <- preProcess(BEPS.data.all.Train, method = c("scale", "center"))
+BEPS.data.all.Train.scale <- predict(center.scale, BEPS.data.all.Train)
+```
+
+`BEPS.data.all.Train.scale` represents the normalized and scaled training set. 
+
+If we have a look at KNN hyperparameters:
+
+```{r}
+modelLookup("knn")
+```
+
+There's only one parameters which represents the number of nearest neighbours. 
+
+```{r}
+knn.grid <- expand.grid(k=c(40,60,80,100,150))
+beps.knn.model <- train(BEPS.data.all.Train.scale, output.values, 
+                         method="knn", trControl=beps.trainCtrl, tuneGrid=knn.grid)
+beps.knn.model
+``` 
+
+If we focus on the best tune: 
+
+```{r}
+knn.k <- beps.knn.model$bestTune
+knn.k$k
+```
+
+We see that the best number of neighbour is `80`.
+
+\clearpage
+
+## Support Vector Machine Model
+
+SVM model, just like KNN, needs to manage normalized and re-scaled data.
+
+If we look at its hyperparameters:
+
+```{r}
+modelLookup(model="svmRadial")
+```
+
+We create two vectors, one containing the sigma values and another containing the cost values
+
+```{r}
+svm.grid <- expand.grid(sigma = c(0.01, .015, 0.2), C = c(1.5, 1.75, 2.0, 2.25, 2.5, 3.0))
+beps.svm.model <- train(BEPS.data.all.Train.scale, output.values, method = "svmRadial", 
+                         tuneGrid = svm.grid, trControl = beps.trainCtrl)
+svm.sigma <- beps.svm.model$bestTune$sigma
+svm.C <- beps.svm.model$bestTune$C
+beps.svm.model
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
