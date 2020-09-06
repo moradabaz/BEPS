@@ -3,8 +3,8 @@ title: "British vote prediction 2002"
 author: 
   - Mourad Abbou Aazaz
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 \clearpage
 \tableofcontents
