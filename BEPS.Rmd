@@ -645,7 +645,7 @@ result.rf
 The result of the testing doesn't seem very significant due to it's  mere informative data and it's not a vital value. We should repeat the same experiment several times to have an opinion and a significant response that could show clear differences between different models. Whatsmore, we've seen that in the previous section that comparison results overlap each other. However, **KNN** seems to show a slightly better accuracy result. If we have a look at confussion matrix using this model:
 
 ```{r}
-caret::confusionMatrix(preds.svm, BEPS.Datos.Todo.20$vote)
+caret::confusionMatrix(preds.svm, BEPS.data.all.20$vote)
 ```
 
 The model has a good predition of the Labour and conservative vote, but a has a bad prediction of the Liberal vote. Our dataset is very small and we may need more tecniques and exemplar to search for a good model. 
