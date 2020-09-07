@@ -4,15 +4,8 @@ Simple Statistical Learning exercise studying a British Election Survey in 2002
 
 ---
 title: "British vote prediction 2002"
-author: 
-  - Mourad Abbou Aazaz
+
 ---
-
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-set.seed(1234)
-```
 
 # Introduction
 
